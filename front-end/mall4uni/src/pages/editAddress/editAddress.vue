@@ -32,8 +32,7 @@
         </view>
         <view
           class="animation-element-wrapper"
-          :animation="animation"
-          :style="'visibility:' + (show ? 'visible':'hidden')"
+          :class="{ show: show }"
           @tap.stop="hiddenFloatView"
         >
           <view
@@ -48,36 +47,46 @@
             </text>
             <view class="line" />
             <picker-view
-              indicator-style="height: 50rpx;"
+              class="region-picker"
+              indicator-style="height: 68rpx;"
               :value="valArr"
               @change="bindChange"
               @tap.stop="nono"
             >
               <!--省-->
-              <picker-view-column>
+              <picker-view-column class="region-picker-column region-picker-column--province">
                 <view
                   v-for="(item, indexs) in provArray"
                   :key="indexs"
+                  class="region-picker-item"
                 >
-                  {{ item.areaName }}
+                  <text class="region-picker-text">
+                    {{ item.areaName }}
+                  </text>
                 </view>
               </picker-view-column>
               <!--地级市-->
-              <picker-view-column>
+              <picker-view-column class="region-picker-column region-picker-column--city">
                 <view
                   v-for="(item, indexss) in cityArray"
                   :key="indexss"
+                  class="region-picker-item"
                 >
-                  {{ item.areaName }}
+                  <text class="region-picker-text">
+                    {{ item.areaName }}
+                  </text>
                 </view>
               </picker-view-column>
               <!--区县-->
-              <picker-view-column>
+              <picker-view-column class="region-picker-column region-picker-column--area">
                 <view
                   v-for="(item, indexsss) in areaArray"
                   :key="indexsss"
+                  class="region-picker-item"
                 >
-                  {{ item.areaName }}
+                  <text class="region-picker-text">
+                    {{ item.areaName }}
+                  </text>
                 </view>
               </picker-view-column>
             </picker-view>
@@ -160,7 +169,7 @@ onLoad((options) => {
 
 const provArray = ref([])
 const valArr = ref([0, 0, 0])
-const initCityData = (provinceId, cityId, areaId) => {
+const initCityData = (provinceIdParam, cityIdParam, areaIdParam) => {
   uni.showLoading()
   http.request({
     url: '/p/area/listByPid',
@@ -171,116 +180,122 @@ const initCityData = (provinceId, cityId, areaId) => {
   })
     .then(({ data }) => {
       provArray.value = data
-      if (provinceId) {
+      // 有默认省份时定位到对应列
+      if (provinceIdParam) {
         for (const index in data) {
-          if (data[index].areaId === provinceId) {
+          // 找到当前省份后同步 picker 索引
+          if (data[index].areaId === provinceIdParam) {
             valArr.value = [parseInt(index), valArr.value[1], valArr.value[2]]
           }
         }
       }
-      getCityArray(provinceId || data[0].areaId, cityId, areaId)
+      getCityArray(provinceIdParam || data[0].areaId, cityIdParam, areaIdParam)
       uni.hideLoading()
     })
 }
 
-let indexArr = [18, 0, 0]
+let indexArr = [0, 0, 0]
 const areaArray = ref([])
 const cityArray = ref([])
+
+/**
+ * 同步当前选中的省市区
+ */
+const syncSelectedArea = () => {
+  const provinceItem = provArray.value[valArr.value[0]]
+  const cityItem = cityArray.value[valArr.value[1]]
+  const areaItem = areaArray.value[valArr.value[2]]
+
+  // 数据未加载完成时先跳过同步
+  if (!provinceItem || !cityItem || !areaItem) {
+    return
+  }
+
+  province.value = provinceItem.areaName
+  city.value = cityItem.areaName
+  area.value = areaItem.areaName
+  provinceId.value = provinceItem.areaId
+  cityId.value = cityItem.areaId
+  areaId.value = areaItem.areaId
+}
+
 /**
  * 滑动事件
  */
 const bindChange = (e) => {
   // 判断滑动的是第几个column
-  const val = e.detail.value
+  const val = [...e.detail.value]
   // 若省份column做了滑动则定位到地级市和区县第一位
-  if (indexArr[0] != val[0]) {
+  if (indexArr[0] !== val[0]) {
     val[1] = 0
     val[2] = 0 // 更新数据
-    // 获取地级市数据
+    valArr.value = val
+    indexArr = val
+    // 省份变化后重新获取地级市数据
     getCityArray(provArray.value[val[0]].areaId)
-  } else {
-    // 若省份column未做滑动，地级市做了滑动则定位区县第一位
-    if (indexArr[1] != val[1]) {
-      val[2] = 0 // 更新数据
-      getAreaArray(cityArray.value[val[1]].areaId) // 获取区县数据
-    }
+    return
   }
+
+  // 若省份column未做滑动，地级市做了滑动则定位区县第一位
+  if (indexArr[1] !== val[1]) {
+    val[2] = 0 // 更新数据
+    valArr.value = val
+    indexArr = val
+    getAreaArray(cityArray.value[val[1]].areaId) // 获取区县数据
+    return
+  }
+
   indexArr = val
-  valArr.value = [val[0], val[1], val[2]]
-  province.value = provArray.value[valArr.value[0]].areaName
-  city.value = cityArray.value[valArr.value[1]].areaName
-  area.value = areaArray.value[valArr.value[2]].areaName
-  provinceId.value = provArray.value[valArr.value[0]].areaId
-  cityId.value = cityArray.value[valArr.value[1]].areaId
-  areaId.value = areaArray.value[valArr.value[2]].areaId
+  valArr.value = val
+  syncSelectedArea()
 }
 
-let t = 0
-let moveY = 200
-const show = ref('')
+const show = ref(false)
 /**
  * 移动按钮点击事件
  */
 const translate = () => {
-  if (t == 0) {
-    moveY = 0
-    show.value = true
-    t = 1
-  } else {
-    moveY = 200
-    show.value = false
-    t = 0
-  }
-  animationEvents(moveY, show.value)
+  show.value = true
 }
 
 /**
  * 隐藏弹窗浮层
  */
 const hiddenFloatView = () => {
-  moveY = 200
   show.value = false
-  t = 0
-  animationEvents(moveY, show.value)
 }
 
-const animation = ref('')
 /**
- * 动画事件
+ * 阻止弹层内部点击冒泡
  */
-const animationEvents = (moveY, showParam) => {
-  animation.value = uni.createAnimation({
-    transformOrigin: '50% 50%',
-    duration: 400,
-    timingFunction: 'ease',
-    delay: 0
-  })
-  animation.value.translateY(moveY + 'vh').step()
-  animation.value = animation.value.export()
-  show.value = showParam
-}
+const nono = () => {}
 
 /**
  * 根据省份ID获取 城市数据
  */
-const getCityArray = (provinceId, cityId, areaId) => {
+const getCityArray = (provinceIdParam, cityIdParam, areaIdParam) => {
   http.request({
     url: '/p/area/listByPid',
     method: 'GET',
     data: {
-      pid: provinceId
+      pid: provinceIdParam
     }
   })
     .then(({ data }) => {
       cityArray.value = data
-      if (cityId) {
+      // 有默认城市时定位到对应列
+      if (cityIdParam) {
         for (const index in data) {
-          if (data[index].areaId == cityId) {
+          // 找到当前城市后同步 picker 索引
+          if (data[index].areaId === cityIdParam) {
             valArr.value = [valArr.value[0], parseInt(index), valArr.value[2]]
           }
         }
+      } else {
+        // 切换省份时默认选中第一个城市
+        valArr.value = [valArr.value[0], 0, valArr.value[2]]
       }
-      getAreaArray(cityId || data[0].areaId, areaId)
+      getAreaArray(cityIdParam || data[0].areaId, areaIdParam)
       uni.hideLoading()
     })
 }
@@ -288,30 +303,29 @@ const getCityArray = (provinceId, cityId, areaId) => {
 /**
  * 根据城市ID获取 区数据
  */
-const getAreaArray = (cityId, areaId) => {
+const getAreaArray = (cityIdParam, areaIdParam) => {
   http.request({
     url: '/p/area/listByPid',
     method: 'GET',
     data: {
-      pid: cityId
+      pid: cityIdParam
     }
   }).then(({ data }) => {
     areaArray.value = data
-    if (areaId) {
+    // 有默认区县时定位到对应列
+    if (areaIdParam) {
       for (const _index in data) {
-        if (data[_index].areaId == areaId) {
+        // 找到当前区县后同步 picker 索引
+        if (data[_index].areaId === areaIdParam) {
           valArr.value = [valArr.value[0], valArr.value[1], parseInt(_index)]
         }
       }
-      indexArr = valArr.value
     } else {
-      province.value = provArray.value[valArr.value[0]].areaName
-      city.value = cityArray.value[valArr.value[1]].areaName
-      area.value = areaArray.value[valArr.value[2]].areaName
-      provinceId.value = provArray.value[valArr.value[0]].areaId
-      cityId.value = cityArray.value[valArr.value[1]].areaId
-      areaId.value = areaArray.value[valArr.value[2]].areaId
+      // 切换城市时默认选中第一个区县
+      valArr.value = [valArr.value[0], valArr.value[1], 0]
     }
+    indexArr = [...valArr.value]
+    syncSelectedArea()
     uni.hideLoading()
   })
 }

@@ -16,7 +16,6 @@
     box-sizing: border-box;
     border-bottom: 2rpx solid #e5e5e5;
     text {
-      width: 20%;
       color: #333;
     }
     input {
@@ -85,35 +84,45 @@
   width: 100%;
   justify-content: center;
 }
-picker-view {
+.region-picker {
   background-color: white;
   padding: 0;
   width: 100%;
-  height: 380rpx;
-  bottom: 0;
-  position: fixed;
-  text {
-    color: #999;
-    display: inline-flex;
-    position: fixed;
-    margin-top: 20rpx;
-    height: 50rpx;
-    text-align: center;
-    line-height: 50rpx;
-    font-size: 34rpx;
-    font-family: Arial, Helvetica, sans-serif;
-  }
+  height: 476rpx;
+  top: 90rpx;
+  position: absolute;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
-picker-view-column {
-  view {
-    vertical-align: middle;
-    font-size: 28rpx;
-    line-height: 28rpx;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.region-picker-column--province {
+  flex: 0 0 34%;
+}
+.region-picker-column--city {
+  flex: 0 0 26%;
+}
+.region-picker-column--area {
+  flex: 0 0 40%;
+}
+.region-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  color: #333;
+  text-align: center;
+  overflow: visible;
+}
+.region-picker-text {
+  display: -webkit-box;
+  overflow: hidden;
+  width: 100%;
+  line-height: 30rpx;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .animation-element-wrapper {
   display: flex;
@@ -124,14 +133,26 @@ picker-view-column {
   width: 100%;
   background-color: rgba(0, 0, 0, 0.6);
   z-index: 999;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  &.show {
+    visibility: visible;
+    opacity: 1;
+    .animation-element {
+      transform: translateY(0);
+    }
+  }
 }
 .animation-element {
-  display: flex;
+  display: block;
   position: fixed;
   width: 100%;
-  height: 470rpx;
+  height: 566rpx;
   bottom: 0;
   background-color: rgba(255, 255, 255, 1);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
 }
 .animation-button {
   top: 20rpx;
@@ -144,15 +165,19 @@ picker-view-column {
 }
 .right-bt {
   right: 20rpx;
-  top: 20rpx;
+  top: 0;
   position: absolute;
   width: 80rpx !important;
+  height: 90rpx;
+  line-height: 90rpx;
+  text-align: center;
+  z-index: 1;
 }
 .line {
   display: block;
-  position: fixed;
+  position: absolute;
   height: 2rpx;
   width: 100%;
-  margin-top: 89rpx;
+  top: 90rpx;
   background-color: #eee;
 }
