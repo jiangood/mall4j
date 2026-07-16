@@ -26,17 +26,11 @@ public class PrincipalUtil {
     public static final String SIMPLE_CHAR_REGEXP = "([a-z0-9]+)";
 
     public static boolean isMobile(String value) {
-        if(StrUtil.isBlank(value)) {
-            return false;
-        }
-        return Pattern.matches(MOBILE_REGEXP, value);
+        return isMatching(MOBILE_REGEXP, value);
     }
 
     public static boolean isUserName(String value) {
-        if(StrUtil.isBlank(value)) {
-            return false;
-        }
-        return Pattern.matches(USER_NAME_REGEXP, value);
+        return isMatching(USER_NAME_REGEXP, value);
     }
 
     public static boolean isMatching(String regexp, String value) {

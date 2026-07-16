@@ -24,6 +24,7 @@ import java.util.List;
 @ParameterObject
 public class PageParam<T> extends Page<T> {
 
+    private static final long MAX_SIZE = 100;
 
     /**
      * 每页显示条数，默认 10
@@ -105,9 +106,8 @@ public class PageParam<T> extends Page<T> {
 
     @Override
     public Page<T> setSize(long size) {
-        int maxSize = 100;
-        if (size > maxSize) {
-            this.size = maxSize;
+        if (size > MAX_SIZE) {
+            this.size = MAX_SIZE;
         } else {
             this.size = size;
         }
